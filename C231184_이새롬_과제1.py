@@ -198,11 +198,16 @@ def run_app_logic(strategy, manual_workers=None):
         curr_backlog = end_backlog
 
     return pd.DataFrame(results)
-
-
 def render_plan_dashboard(df: pd.DataFrame, title_prefix: str):
+    """계획 결과 표, 핵심 지표, 그래프를 출력한다."""
+    key_prefix = "manual" if "수동" in title_prefix else "auto"
+
     st.markdown(f"### {title_prefix} 결과표")
-    st.dataframe(add_display_cost_columns(df), use_container_width=True)
+    st.dataframe(
+        add_display_cost_columns(df),
+        use_container_width=True,
+        key=f"{key_prefix}_result_table",
+    )
 
     total_cost = df["총비용"].sum()
     total_revenue = sum(demands) * sales_price
@@ -221,29 +226,66 @@ def render_plan_dashboard(df: pd.DataFrame, title_prefix: str):
         fig1 = go.Figure(
             [
                 go.Bar(x=months, y=df["수요"], name="수요"),
-                go.Scatter(x=months, y=df["총생산"], name="총 생산", line=dict(color="red", width=3)),
+                go.Scatter(
+                    x=months,
+                    y=df["총생산"],
+                    name="총 생산",
+                    line=dict(color="red", width=3),
+                ),
             ]
         )
         fig1.update_layout(title="수요 대비 총 생산량 추이", margin=dict(t=40, b=0, l=0, r=0))
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True, key=f"{key_prefix}_fig1")
 
         fig3 = go.Figure()
-        fig3.add_trace(go.Bar(x=months, y=df["작업자"], name="투입 작업자 수", yaxis="y1", marker_color="lightblue"))
-        fig3.add_trace(go.Scatter(x=months, y=df["활용률(%)"], name="생산 활용률(%)", yaxis="y2", line=dict(color="orange")))
+        fig3.add_trace(
+            go.Bar(
+                x=months,
+                y=df["작업자"],
+                name="투입 작업자 수",
+                yaxis="y1",
+                marker_color="lightblue",
+            )
+        )
+        fig3.add_trace(
+            go.Scatter(
+                x=months,
+                y=df["활용률(%)"],
+                name="생산 활용률(%)",
+                yaxis="y2",
+                line=dict(color="orange"),
+            )
+        )
         fig3.update_layout(
             title="인력 투입 및 생산능력 활용률",
             yaxis=dict(title="작업자 수"),
             yaxis2=dict(title="활용률(%)", overlaying="y", side="right"),
             margin=dict(t=40, b=0, l=0, r=0),
         )
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, use_container_width=True, key=f"{key_prefix}_fig3")
 
     with g2:
         fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(x=months, y=df["재고"], fill="tozeroy", name="기말 재고", line=dict(color="green")))
-        fig2.add_trace(go.Scatter(x=months, y=df["부재고"], fill="tozeroy", name="부재고(Backlog)", line=dict(color="red")))
+        fig2.add_trace(
+            go.Scatter(
+                x=months,
+                y=df["재고"],
+                fill="tozeroy",
+                name="기말 재고",
+                line=dict(color="green"),
+            )
+        )
+        fig2.add_trace(
+            go.Scatter(
+                x=months,
+                y=df["부재고"],
+                fill="tozeroy",
+                name="부재고(Backlog)",
+                line=dict(color="red"),
+            )
+        )
         fig2.update_layout(title="재고 및 부재고 변동", margin=dict(t=40, b=0, l=0, r=0))
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, key=f"{key_prefix}_fig2")
 
         cost_sums = {
             "정규노무비": df["정규노무비"].sum(),
@@ -255,9 +297,13 @@ def render_plan_dashboard(df: pd.DataFrame, title_prefix: str):
             "부재고비": df["부재고비"].sum(),
         }
         cost_sums = {k: v for k, v in cost_sums.items() if v > 0}
-        fig4 = px.pie(values=list(cost_sums.values()), names=list(cost_sums.keys()), title="총비용 세부 구성비")
+        fig4 = px.pie(
+            values=list(cost_sums.values()),
+            names=list(cost_sums.keys()),
+            title="총비용 세부 구성비",
+        )
         fig4.update_layout(margin=dict(t=40, b=0, l=0, r=0))
-        st.plotly_chart(fig4, use_container_width=True)
+        st.plotly_chart(fig4, use_container_width=True, key=f"{key_prefix}_fig4")
 
     csv = df.to_csv(index=False).encode("utf-8-sig")
     st.download_button(
@@ -265,8 +311,8 @@ def render_plan_dashboard(df: pd.DataFrame, title_prefix: str):
         data=csv,
         file_name=f"{title_prefix}_APP_계획.csv",
         mime="text/csv",
+        key=f"{key_prefix}_csv_download",
     )
-
 
 def render_feasibility_message(df: pd.DataFrame):
     final_inventory_ok = df["재고"].iloc[-1] >= target_inventory
