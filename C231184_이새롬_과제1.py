@@ -55,7 +55,7 @@ s_cost = st.sidebar.number_input("외주 비용 (원/개)", min_value=0, value=1
 h_cost = st.sidebar.number_input("재고유지비 (원/개/월)", min_value=0, value=2000, step=100)
 b_cost = st.sidebar.number_input("부재고 비용 (원/개/월)", min_value=0, value=5000, step=100)
 h_hire = st.sidebar.number_input("고용 비용 (원/인)", min_value=0, value=300000, step=10000)
-f_fire = st.sidebar.number_input("��고 비용 (원/인)", min_value=0, value=500000, step=10000)
+f_fire = st.sidebar.number_input("해고 비용 (원/인)", min_value=0, value=500000, step=10000)
 sales_price = st.sidebar.number_input(
     "판매 단가 (원/개, 참고용)",
     min_value=0,
